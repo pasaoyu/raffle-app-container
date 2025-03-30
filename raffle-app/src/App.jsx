@@ -39,9 +39,10 @@ export default function RaffleApp() {
     const next = availableNumbers[0];
     const se = new Audio("sounds/se.mp3");
 
+    setIsFinalNumber(false);
     setIsRolling(true);
-    let count = 0;
 
+    let count = 0;
     const interval = setInterval(() => {
       const fake = Math.floor(Math.random() * Number(maxNumber)) + 1;
       setCurrentNumber(fake);
@@ -61,8 +62,7 @@ export default function RaffleApp() {
 
   const handleEnterKey = (e) => {
     if (e.key !== "Enter") return;
-
-    if (!isDrawing) {
+    if (!isDrawing && /^[1-9]\d*$/.test(maxNumber)) {
       startDrawing();
     } else if (!justStarted && !isRolling && availableNumbers.length > 0) {
       drawNumber();
@@ -72,11 +72,10 @@ export default function RaffleApp() {
   useEffect(() => {
     window.addEventListener("keydown", handleEnterKey);
     return () => window.removeEventListener("keydown", handleEnterKey);
-  }, [isDrawing, isRolling, availableNumbers, justStarted]);
+  }, [isDrawing, isRolling, availableNumbers, justStarted, maxNumber]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-100 to-white flex flex-col items-center justify-center p-4 space-y-4">
-      {/* 🌸 タイトル（枠の外に表示） */}
       <h1
         className={`text-xl font-bold text-pink-500 transition-opacity duration-500 ${
           isDrawing ? "opacity-0" : "opacity-100"
@@ -85,7 +84,6 @@ export default function RaffleApp() {
         🌸 春祭り 抽選ツール 🌸
       </h1>
 
-      {/* 白い枠（カード） */}
       <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4 border border-pink-200">
         {!isDrawing ? (
           <input
@@ -95,6 +93,11 @@ export default function RaffleApp() {
               const value = e.target.value;
               if (value === "" || /^[1-9]\d*$/.test(value)) {
                 setMaxNumber(value);
+              }
+            }}
+            onBlur={() => {
+              if (!isDrawing && /^[1-9]\d*$/.test(maxNumber)) {
+                startDrawing();
               }
             }}
             onKeyDown={handleEnterKey}
@@ -146,7 +149,6 @@ export default function RaffleApp() {
         )}
       </div>
 
-      {/* スタイル */}
       <style>{`
         .animate-pop {
           animation: pop 0.25s ease-out;

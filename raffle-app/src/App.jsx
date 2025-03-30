@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function shuffle(array) {
   const result = [...array];
@@ -15,6 +15,9 @@ export default function RaffleApp() {
   const [availableNumbers, setAvailableNumbers] = useState([]);
   const [drawnNumbers, setDrawnNumbers] = useState([]);
   const [currentNumber, setCurrentNumber] = useState(null);
+  const [isFinalNumber, setIsFinalNumber] = useState(false);
+  const [isRolling, setIsRolling] = useState(false);
+  const [justStarted, setJustStarted] = useState(false);
 
   const startDrawing = () => {
     const max = Number(maxNumber);
@@ -25,128 +28,140 @@ export default function RaffleApp() {
     setDrawnNumbers([]);
     setCurrentNumber(null);
     setIsDrawing(true);
+    setJustStarted(true);
+
+    setTimeout(() => setJustStarted(false), 300);
   };
 
   const drawNumber = () => {
-    if (!isDrawing || availableNumbers.length === 0) return;
+    if (!isDrawing || availableNumbers.length === 0 || isRolling) return;
 
     const next = availableNumbers[0];
-    setCurrentNumber(null);
-    setTimeout(() => {
-      setCurrentNumber(next);
-      setDrawnNumbers((prev) => [...prev, next]);
-      setAvailableNumbers((prev) => prev.slice(1));
-    }, 10);
+    const se = new Audio("sounds/se.mp3");
+
+    setIsRolling(true);
+    let count = 0;
+
+    const interval = setInterval(() => {
+      const fake = Math.floor(Math.random() * Number(maxNumber)) + 1;
+      setCurrentNumber(fake);
+      count++;
+
+      if (count >= 15) {
+        clearInterval(interval);
+        setCurrentNumber(next);
+        setIsFinalNumber(true);
+        setDrawnNumbers((prev) => [...prev, next]);
+        setAvailableNumbers((prev) => prev.slice(1));
+        se.play();
+        setIsRolling(false);
+      }
+    }, 30);
   };
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
-    setCurrentNumber(null);
+  const handleEnterKey = (e) => {
+    if (e.key !== "Enter") return;
+
+    if (!isDrawing) {
+      startDrawing();
+    } else if (!justStarted && !isRolling && availableNumbers.length > 0) {
+      drawNumber();
+    }
   };
 
-  const reset = () => {
-    setIsDrawing(false);
-    setCurrentNumber(null);
-    setDrawnNumbers([]);
-    setAvailableNumbers([]);
-    setMaxNumber("");
-  };
-
-  const isComplete = availableNumbers.length === 0 && isDrawing;
+  useEffect(() => {
+    window.addEventListener("keydown", handleEnterKey);
+    return () => window.removeEventListener("keydown", handleEnterKey);
+  }, [isDrawing, isRolling, availableNumbers, justStarted]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white flex items-center justify-center p-4 transition-all">
-      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md space-y-6">
-        <h1 className="text-3xl font-bold text-center text-pink-600">🎯 春祭り抽選</h1>
+    <div className="min-h-screen bg-gradient-to-b from-pink-100 to-white flex flex-col items-center justify-center p-4 space-y-4">
+      {/* 🌸 タイトル（枠の外に表示） */}
+      <h1
+        className={`text-xl font-bold text-pink-500 transition-opacity duration-500 ${
+          isDrawing ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        🌸 春祭り 抽選ツール 🌸
+      </h1>
 
+      {/* 白い枠（カード） */}
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4 border border-pink-200">
         {!isDrawing ? (
-          <>
-            <input
-              type="number"
-              value={maxNumber}
-              min={1}
-              onChange={(e) => setMaxNumber(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 p-3 text-lg shadow-sm focus:ring-2 focus:ring-pink-300"
-              placeholder="最大番号を入力"
-            />
-            <button
-              onClick={startDrawing}
-              className="w-full bg-pink-500 hover:bg-pink-600 text-white text-lg font-semibold py-3 rounded-xl transition"
-            >
-              🎬 開始
-            </button>
-          </>
+          <input
+            type="text"
+            value={maxNumber}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^[1-9]\d*$/.test(value)) {
+                setMaxNumber(value);
+              }
+            }}
+            onKeyDown={handleEnterKey}
+            className="w-full rounded-xl border border-pink-300 px-4 py-3 text-center text-lg text-pink-600 focus:ring-2 focus:ring-pink-300 outline-none no-spinner"
+            placeholder=""
+            inputMode="numeric"
+            autoFocus
+          />
         ) : (
           <>
-            <div className="flex justify-between gap-4">
+            <div className="flex justify-center">
               <button
                 onClick={drawNumber}
-                disabled={availableNumbers.length === 0}
-                className={`flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition ${
-                  availableNumbers.length === 0 ? "opacity-50 cursor-not-allowed" : ""
+                disabled={availableNumbers.length === 0 || isRolling}
+                className={`text-5xl transition-transform duration-150 ${
+                  availableNumbers.length === 0 || isRolling
+                    ? "opacity-20 cursor-not-allowed"
+                    : "hover:scale-110"
                 }`}
+                aria-label="抽選"
               >
-                🎲 抽選
-              </button>
-              <button
-                onClick={stopDrawing}
-                className="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-3 rounded-xl transition"
-              >
-                ⛔ 終了
+                🎉
               </button>
             </div>
 
-            {/* 数字表示 */}
-            <div className="h-24 text-center flex items-center justify-center">
+            <div className="h-20 flex items-center justify-center">
               {currentNumber !== null && (
                 <div
-                  key={currentNumber}
-                  className="text-6xl font-extrabold text-pink-600 animate-pop"
+                  className={`text-5xl font-bold text-pink-600 ${
+                    isFinalNumber ? "animate-pop" : ""
+                  }`}
                 >
                   {currentNumber}
                 </div>
               )}
             </div>
 
-            {/* 抽選完了メッセージ */}
-            {isComplete && (
-              <div className="text-center text-green-600 font-semibold">
-                ✅ 全ての番号が抽選されました！
-              </div>
-            )}
-
-            {/* 履歴 */}
-            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto text-sm">
+            <div className="grid grid-cols-5 gap-2 text-sm">
               {drawnNumbers.map((num, index) => (
                 <div
                   key={index}
-                  className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-medium shadow"
+                  className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-medium text-center shadow-sm"
                 >
                   {num}
                 </div>
               ))}
             </div>
-
-            {isComplete && (
-              <button
-                onClick={reset}
-                className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-xl transition"
-              >
-                🔁 リセット
-              </button>
-            )}
           </>
         )}
       </div>
 
-      {/* アニメーション */}
+      {/* スタイル */}
       <style>{`
         .animate-pop {
-          animation: pop 0.3s ease-out;
+          animation: pop 0.25s ease-out;
         }
         @keyframes pop {
           0% { transform: scale(0.6); opacity: 0; }
           100% { transform: scale(1); opacity: 1; }
+        }
+        input[type="number"].no-spinner::-webkit-inner-spin-button,
+        input[type="number"].no-spinner::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"].no-spinner {
+          -moz-appearance: textfield;
         }
       `}</style>
     </div>

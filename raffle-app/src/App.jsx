@@ -84,7 +84,7 @@ export default function RaffleApp() {
         🌸 春祭り 抽選ツール 🌸
       </h1>
 
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4 border border-pink-200">
+      <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4 border border-pink-200">
         {!isDrawing ? (
           <input
             type="text"
@@ -144,6 +144,11 @@ export default function RaffleApp() {
                   {num}
                 </div>
               ))}
+            </div>
+
+            {/* 🎯 抽選の進行状況（分子が0から） */}
+            <div className="absolute bottom-2 right-3 text-xs text-pink-400">
+              {drawnNumbers.length} / {maxNumber}
             </div>
           </>
         )}

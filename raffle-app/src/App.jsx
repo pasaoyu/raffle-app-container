@@ -76,12 +76,14 @@ export default function RaffleApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-100 to-white flex flex-col items-center justify-center p-4 space-y-4">
-      <h1
-        className={`text-xl font-bold text-pink-500 transition-opacity duration-500 ${
-          isDrawing ? "opacity-0" : "opacity-100"
-        }`}
-      >
-        🌸 春祭り 抽選ツール 🌸
+      <h1 className={`text-xl font-bold text-pink-500 transition-opacity duration-500 ${isDrawing ? "opacity-0" : "opacity-100"}`}>
+        <span className="inline-block w-6 h-6 mr-1 align-middle">
+          <img src="./icons/cherry_blossom_flat.svg" alt="sakura" className="w-full h-full" />
+        </span>
+        春祭り 抽選ツール
+        <span className="inline-block w-6 h-6 ml-1 align-middle">
+          <img src="./icons/cherry_blossom_flat.svg" alt="sakura" className="w-full h-full" />
+        </span>
       </h1>
 
       <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4 border border-pink-200">
@@ -119,7 +121,7 @@ export default function RaffleApp() {
                 }`}
                 aria-label="抽選"
               >
-                🎉
+                <img src="./icons/party_popper_flat.svg" alt="draw" className="w-12 h-12" />
               </button>
             </div>
 

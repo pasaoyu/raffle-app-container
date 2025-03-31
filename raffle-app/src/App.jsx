@@ -15,12 +15,16 @@ export default function RaffleApp() {
   const [availableNumbers, setAvailableNumbers] = useState([]);
   const [drawnNumbers, setDrawnNumbers] = useState([]);
   const [currentNumber, setCurrentNumber] = useState(null);
-  const [isFinalNumber, setIsFinalNumber] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
   const [justStarted, setJustStarted] = useState(false);
+  const [hasSavedState, setHasSavedState] = useState(false);
 
-  // 保存と復元処理
   useEffect(() => {
+    const saved = localStorage.getItem("raffleState");
+    if (saved) setHasSavedState(true);
+  }, []);
+
+  const handleRestore = () => {
     const saved = localStorage.getItem("raffleState");
     if (saved) {
       const state = JSON.parse(saved);
@@ -30,7 +34,13 @@ export default function RaffleApp() {
       setCurrentNumber(state.currentNumber);
       setIsDrawing(true);
     }
-  }, []);
+    setHasSavedState(false);
+  };
+
+  const handleReset = () => {
+    localStorage.removeItem("raffleState");
+    setHasSavedState(false);
+  };
 
   useEffect(() => {
     if (isDrawing) {
@@ -54,8 +64,6 @@ export default function RaffleApp() {
     setCurrentNumber(null);
     setIsDrawing(true);
     setJustStarted(true);
-
-    // 保存状態をクリア
     localStorage.removeItem("raffleState");
 
     setTimeout(() => setJustStarted(false), 300);
@@ -67,7 +75,6 @@ export default function RaffleApp() {
     const next = availableNumbers[0];
     const se = new Audio("sounds/se.mp3");
 
-    setIsFinalNumber(false);
     setIsRolling(true);
 
     let count = 0;
@@ -76,10 +83,9 @@ export default function RaffleApp() {
       setCurrentNumber(fake);
       count++;
 
-      if (count >= 15) {
+      if (count >= 20) {
         clearInterval(interval);
         setCurrentNumber(next);
-        setIsFinalNumber(true);
         setDrawnNumbers((prev) => [...prev, next]);
         setAvailableNumbers((prev) => prev.slice(1));
         se.play();
@@ -97,14 +103,30 @@ export default function RaffleApp() {
     }
   };
 
+  // 再開確認時：Enter → 再開、Escape → いいえ
+  useEffect(() => {
+    if (!hasSavedState) return;
+
+    const handleKey = (e) => {
+      if (e.key === "Enter") {
+        handleRestore();
+      } else if (e.key === "Escape") {
+        handleReset();
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [hasSavedState]);
+
   useEffect(() => {
     window.addEventListener("keydown", handleEnterKey);
     return () => window.removeEventListener("keydown", handleEnterKey);
   }, [isDrawing, isRolling, availableNumbers, justStarted, maxNumber]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-100 to-white flex flex-col items-center justify-center p-4 space-y-4">
-      <h1 className={`text-xl font-bold text-pink-500 transition-opacity duration-500 ${isDrawing ? "opacity-0" : "opacity-100"}`}>
+    <div className="min-h-screen bg-gradient-to-b from-pink-100 via-white to-pink-50 flex flex-col items-center justify-center p-4 space-y-6">
+      <h1 className="text-2xl font-extrabold text-pink-500">
         <span className="inline-block w-6 h-6 mr-1 align-middle">
           <img src="./icons/cherry_blossom_flat.svg" alt="sakura" className="w-full h-full" />
         </span>
@@ -114,8 +136,26 @@ export default function RaffleApp() {
         </span>
       </h1>
 
-      <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4 border border-pink-200">
-        {!isDrawing ? (
+      <div className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm space-y-6 border border-pink-200">
+        {hasSavedState ? (
+          <div className="text-center space-y-3">
+            <p className="text-pink-600 font-semibold">前回の抽選を再開しますか？</p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={handleRestore}
+                className="px-4 py-2 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition"
+              >
+                はい
+              </button>
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 bg-gray-200 text-pink-600 rounded-full hover:bg-gray-300 transition"
+              >
+                いいえ
+              </button>
+            </div>
+          </div>
+        ) : !isDrawing ? (
           <input
             type="text"
             value={maxNumber}
@@ -125,14 +165,10 @@ export default function RaffleApp() {
                 setMaxNumber(value);
               }
             }}
-            onBlur={() => {
-              if (!isDrawing && /^[1-9]\d*$/.test(maxNumber)) {
-                startDrawing();
-              }
-            }}
+            onBlur={() => /^[1-9]\d*$/.test(maxNumber) && startDrawing()}
             onKeyDown={handleEnterKey}
-            className="w-full rounded-xl border border-pink-300 px-4 py-3 text-center text-lg text-pink-600 focus:ring-2 focus:ring-pink-300 outline-none no-spinner"
-            placeholder=""
+            className="w-full text-center text-lg text-pink-600 border border-pink-300 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-pink-300"
+            placeholder="最大番号を入力"
             inputMode="numeric"
             autoFocus
           />
@@ -142,24 +178,16 @@ export default function RaffleApp() {
               <button
                 onClick={drawNumber}
                 disabled={availableNumbers.length === 0 || isRolling}
-                className={`text-5xl transition-transform duration-150 ${
-                  availableNumbers.length === 0 || isRolling
-                    ? "opacity-20 cursor-not-allowed"
-                    : "hover:scale-110"
-                }`}
+                className={`transition-transform duration-150 ${availableNumbers.length === 0 || isRolling ? "opacity-30 cursor-not-allowed" : "hover:scale-110"}`}
                 aria-label="抽選"
               >
-                <img src="./icons/party_popper_flat.svg" alt="draw" className="w-12 h-12" />
+                <img src="./icons/party_popper_flat.svg" alt="draw" className="w-14 h-14" />
               </button>
             </div>
 
             <div className="h-20 flex items-center justify-center">
               {currentNumber !== null && (
-                <div
-                  className={`text-5xl font-bold text-pink-600 ${
-                    isFinalNumber ? "animate-pop" : ""
-                  }`}
-                >
+                <div className="text-6xl font-bold text-pink-600 animate-pop">
                   {currentNumber}
                 </div>
               )}
@@ -167,16 +195,13 @@ export default function RaffleApp() {
 
             <div className="grid grid-cols-5 gap-2 text-sm">
               {drawnNumbers.map((num, index) => (
-                <div
-                  key={index}
-                  className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-medium text-center shadow-sm"
-                >
+                <div key={index} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-medium text-center shadow-sm">
                   {num}
                 </div>
               ))}
             </div>
 
-            <div className="absolute bottom-2 right-3 text-xs text-pink-400">
+            <div className="absolute bottom-2 right-4 text-xs text-pink-400">
               {drawnNumbers.length} / {maxNumber}
             </div>
           </>
@@ -185,7 +210,7 @@ export default function RaffleApp() {
 
       <style>{`
         .animate-pop {
-          animation: pop 0.25s ease-out;
+          animation: pop 0.3s ease-out;
         }
         @keyframes pop {
           0% { transform: scale(0.6); opacity: 0; }

@@ -19,6 +19,31 @@ export default function RaffleApp() {
   const [isRolling, setIsRolling] = useState(false);
   const [justStarted, setJustStarted] = useState(false);
 
+  // 保存と復元処理
+  useEffect(() => {
+    const saved = localStorage.getItem("raffleState");
+    if (saved) {
+      const state = JSON.parse(saved);
+      setMaxNumber(state.maxNumber);
+      setAvailableNumbers(state.availableNumbers);
+      setDrawnNumbers(state.drawnNumbers);
+      setCurrentNumber(state.currentNumber);
+      setIsDrawing(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDrawing) {
+      const state = {
+        maxNumber,
+        availableNumbers,
+        drawnNumbers,
+        currentNumber,
+      };
+      localStorage.setItem("raffleState", JSON.stringify(state));
+    }
+  }, [maxNumber, availableNumbers, drawnNumbers, currentNumber, isDrawing]);
+
   const startDrawing = () => {
     const max = Number(maxNumber);
     if (max < 1) return;
@@ -29,6 +54,9 @@ export default function RaffleApp() {
     setCurrentNumber(null);
     setIsDrawing(true);
     setJustStarted(true);
+
+    // 保存状態をクリア
+    localStorage.removeItem("raffleState");
 
     setTimeout(() => setJustStarted(false), 300);
   };
@@ -148,7 +176,6 @@ export default function RaffleApp() {
               ))}
             </div>
 
-            {/* 🎯 抽選の進行状況（分子が0から） */}
             <div className="absolute bottom-2 right-3 text-xs text-pink-400">
               {drawnNumbers.length} / {maxNumber}
             </div>

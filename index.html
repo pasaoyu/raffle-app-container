@@ -4,27 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>春祭り 抽選ツール</title>
-
-    <!-- 🌸 ファビコンを絵文字で動的に生成 -->
-    <script>
-      const emoji = "🎉"; // 🎉 に変えてもOK！
-      const canvas = document.createElement("canvas");
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext("2d");
-      ctx.font = "48px serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(emoji, 32, 32);
-
-      const link = document.createElement("link");
-      link.rel = "icon";
-      link.type = "image/png";
-      link.href = canvas.toDataURL("image/png");
-      document.head.appendChild(link);
-    </script>
-    <script type="module" crossorigin src="/raffle-app-container/assets/index-BGvI1x9f.js"></script>
-    <link rel="stylesheet" crossorigin href="/raffle-app-container/assets/index-Cske2Dxo.css">
+    <link rel="icon" href="/raffle-app-container/icons/party_popper_flat.svg" type="image/svg+xml" />
+    <script type="module" crossorigin src="/raffle-app-container/assets/index-2ZQj9tPd.js"></script>
+    <link rel="stylesheet" crossorigin href="/raffle-app-container/assets/index-Daw7vZKB.css">
   </head>
   <body>
     <div id="root"></div>
